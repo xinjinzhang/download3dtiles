@@ -83,6 +83,52 @@ def autoDownLoad(url,add):
     return False
 
 
+def parseAndDownloadJsonIndex(baseurl,query,file):
+    jsonIndexUrl = baseurl+file
+    jsonIndexUrl += query if ('?' + query) else ''
+    print(jsonIndexUrl)
+
+    urllib.request.URLopener.version = 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.153 Safari/537.36 SE 2.X MetaSr 1.0'
+
+    tilesetfile = savedir+'/'+file
+    if not autoDownLoad(jsonIndexUrl,tilesetfile):
+        sys.exit(2)
+    
+    print('download '+file+' success')
+    #解析
+    tileset = None
+    try:
+        f = codecs.open(tilesetfile,'r','utf-8')
+        s = f.read()
+        f.close()
+
+        tileset = json.loads(s)
+    except Exception as e:
+        print(e)
+
+    contents=[]
+    getContents(contents,tileset['root'])
+
+    for i in range(start,len(contents)):
+        c = contents[i]
+
+        if c.endswith('.json') :
+            print(c)
+            parseAndDownloadJsonIndex(baseurl,query,c)
+        else:
+            file = savedir+'/' + c
+            dirname =  os.path.dirname(file)
+            if not os.path.exists(dirname):
+                os.makedirs(dirname) 
+
+            url = baseurl + c + '?' + uu.query
+            if autoDownLoad(url,file):
+                print( c + ' download success: '  + str(i+1) + '/' + str(len(contents)))
+            else:
+                print( c + ' download failed: '  + str(i+1) + '/' + str(len(contents)))
+
+    return
+
 
 
 if __name__ == "__main__":
@@ -136,53 +182,10 @@ if __name__ == "__main__":
         tileseturl +=  '/tileset.json'
 
     baseurl = tileseturl[0:tileseturl.find('tileset.json')]
-    #print(baseurl)
+    print(baseurl)
     #sys.exit(2)
 
-    tileseturl += uu.query if ('?' + uu.query) else ''
-
-
-    print(tileseturl)
-
-    urllib.request.URLopener.version = 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.153 Safari/537.36 SE 2.X MetaSr 1.0'
-
-    tilesetfile = savedir+'/tileset.json'
-    if not autoDownLoad(tileseturl,tilesetfile):
-        sys.exit(2)
-    
-
-
-    print('download tileset.json success')
-
-    #解析
-    tileset = None
-    try:
-        f = codecs.open(tilesetfile,'r','utf-8')
-        s = f.read()
-        f.close()
-
-        tileset = json.loads(s)
-    except Exception as e:
-        print(e)
-
-    contents = []
-    getContents(contents,tileset['root'])
-    print(contents)
-
-
-    for i in range(start,len(contents)):
-        c = contents[i]
-
-        file = savedir+'/' + c
-
-        dirname =  os.path.dirname(file)
-        if not os.path.exists(dirname):
-            os.makedirs(dirname) 
-
-        url = baseurl + c + '?' + uu.query
-        if autoDownLoad(url,file):
-            print( c + ' download success: '  + str(i+1) + '/' + str(len(contents)))
-        else:
-            print( c + ' download failed: '  + str(i+1) + '/' + str(len(contents)))
+    parseAndDownloadJsonIndex(baseurl,uu.query,'tileset.json')
+   
 
     #下载tilesetjson
